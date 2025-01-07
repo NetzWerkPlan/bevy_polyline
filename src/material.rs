@@ -1,6 +1,9 @@
-use crate::polyline::{
-    DrawPolyline, PolylinePipeline, PolylinePipelineKey, PolylineUniform, PolylineViewBindGroup,
-    SetPolylineBindGroup,
+use crate::{
+    clipping::HalfSpacesUniform,
+    polyline::{
+        DrawPolyline, PolylinePipeline, PolylinePipelineKey, PolylineUniform,
+        PolylineViewBindGroup, SetPolylineBindGroup,
+    },
 };
 
 use bevy::{
@@ -191,16 +194,33 @@ impl Plugin for PolylineMaterialPlugin {
 pub struct PolylineMaterialPipeline {
     pub polyline_pipeline: PolylinePipeline,
     pub material_layout: BindGroupLayout,
+    pub half_spaces_layout: BindGroupLayout,
 }
 
 impl FromWorld for PolylineMaterialPipeline {
     fn from_world(world: &mut World) -> Self {
         let render_device = world.get_resource::<RenderDevice>().unwrap();
         let material_layout = PolylineMaterial::bind_group_layout(render_device);
+
+        let half_spaces_layout = render_device.create_bind_group_layout(
+            "half_spaces_layout",
+            &[BindGroupLayoutEntry {
+                binding: 0,
+                visibility: ShaderStages::FRAGMENT,
+                ty: BindingType::Buffer {
+                    ty: BufferBindingType::Uniform,
+                    has_dynamic_offset: false,
+                    min_binding_size: None,
+                },
+                count: None,
+            }],
+        );
+
         let pipeline = world.get_resource::<PolylinePipeline>().unwrap();
         PolylineMaterialPipeline {
             polyline_pipeline: pipeline.to_owned(),
             material_layout,
+            half_spaces_layout,
         }
     }
 }
@@ -219,6 +239,7 @@ impl SpecializedRenderPipeline for PolylineMaterialPipeline {
             self.polyline_pipeline.view_layout.clone(),
             self.polyline_pipeline.polyline_layout.clone(),
             self.material_layout.clone(),
+            self.half_spaces_layout.clone(),
         ];
         descriptor
     }
@@ -229,6 +250,7 @@ type DrawPolylineMaterial = (
     SetPolylineViewBindGroup<0>,
     SetPolylineBindGroup<1>,
     SetMaterialBindGroup<2>,
+    SetHalfSpacesBindGroup<3>,
     DrawPolyline,
 );
 
@@ -272,6 +294,24 @@ impl<const I: usize, P: PhaseItem> RenderCommand<P> for SetMaterialBindGroup<I> 
             PolylineMaterial::bind_group(material),
             PolylineMaterial::dynamic_uniform_indices(material),
         );
+        RenderCommandResult::Success
+    }
+}
+
+pub struct SetHalfSpacesBindGroup<const I: usize>;
+impl<const I: usize, P: PhaseItem> RenderCommand<P> for SetHalfSpacesBindGroup<I> {
+    type ViewQuery = ();
+    type ItemQuery = ();
+    type Param = SRes<HalfSpacesUniform>;
+
+    fn render<'w>(
+        _item: &P,
+        _view: ROQueryItem<'w, Self::ViewQuery>,
+        _entity: Option<ROQueryItem<'w, Self::ItemQuery>>,
+        half_spaces: SystemParamItem<'w, '_, Self::Param>,
+        pass: &mut TrackedRenderPass<'w>,
+    ) -> RenderCommandResult {
+        pass.set_bind_group(I, &half_spaces.into_inner().bind_group, &[]);
         RenderCommandResult::Success
     }
 }
