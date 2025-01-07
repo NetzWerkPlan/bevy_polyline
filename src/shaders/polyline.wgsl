@@ -127,13 +127,15 @@ struct FragmentInput {
 
 @fragment
 fn fragment(in: FragmentInput) -> @location(0) vec4<f32> {
-    for(var i: u32 = 0u; i < half_spaces.count[0]; i++) {
-        let plane = half_spaces.planes[i];
-        let distance = dot(plane.xyz, in.world_position.xyz) + plane.w;
-        if (distance < 0.0) {
-            discard;
+    #ifdef POLYLINE_CLIPPING
+        for(var i: u32 = 0u; i < half_spaces.count[0]; i++) {
+            let plane = half_spaces.planes[i];
+            let distance = dot(plane.xyz, in.world_position.xyz) + plane.w;
+            if (distance < 0.0) {
+                discard;
+            }
         }
-    }
+    #endif
 
     return in.color;
 }

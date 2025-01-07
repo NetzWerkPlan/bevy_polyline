@@ -1,4 +1,8 @@
-use bevy::{color::palettes::css::RED, prelude::*, render::primitives::HalfSpace};
+use bevy::{
+    color::palettes::css::{BLUE, GREEN, RED},
+    prelude::*,
+    render::primitives::HalfSpace,
+};
 use bevy_polyline::{clipping::ClippingSettings, prelude::*};
 
 fn main() {
@@ -42,7 +46,55 @@ fn setup(
             width: 10.0,
             color: RED.into(),
             perspective: false,
-            ..default()
+            enable_clipping: true,
+            depth_bias: 0.0,
+        }),
+        ..default()
+    });
+
+    commands.spawn(PolylineBundle {
+        polyline: polylines.add(Polyline {
+            vertices: vec![
+                // bottom face
+                Vec3::new(-1.5, -1.5, -1.5),
+                Vec3::new(1.5, -1.5, -1.5),
+                Vec3::new(1.5, -1.5, 1.5),
+                Vec3::new(-1.5, -1.5, 1.5),
+                Vec3::new(-1.5, -1.5, -1.5),
+                // vertical edges
+                Vec3::new(-1.5, 1.5, -1.5),
+                Vec3::new(-1.5, 1.5, 1.5),
+                Vec3::new(-1.5, -1.5, 1.5),
+                Vec3::new(-1.5, 1.5, 1.5),
+                Vec3::new(1.5, 1.5, 1.5),
+                Vec3::new(1.5, -1.5, 1.5),
+                Vec3::new(1.5, 1.5, 1.5),
+                Vec3::new(1.5, 1.5, -1.5),
+                Vec3::new(1.5, -1.5, -1.5),
+                Vec3::new(1.5, 1.5, -1.5),
+                Vec3::new(-1.5, 1.5, -1.5),
+            ],
+        }),
+        material: polyline_materials.add(PolylineMaterial {
+            width: 10.0,
+            color: GREEN.into(),
+            perspective: true,
+            enable_clipping: true,
+            depth_bias: 0.0,
+        }),
+        ..default()
+    });
+
+    commands.spawn(PolylineBundle {
+        polyline: polylines.add(Polyline {
+            vertices: vec![Vec3::NEG_ONE, Vec3::ONE],
+        }),
+        material: polyline_materials.add(PolylineMaterial {
+            width: 10.0,
+            color: BLUE.into(),
+            perspective: false,
+            enable_clipping: false,
+            depth_bias: 0.0,
         }),
         ..default()
     });

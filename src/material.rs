@@ -64,6 +64,13 @@ pub struct PolylineMaterial {
     ///
     /// Note that `depth_bias` **does not** interact with this in any way.
     pub perspective: bool,
+    /// Whether to clip this polyline with the half spaces defined in
+    /// [`ClippingSettings`](crate::clipping::ClippingSettings).
+    ///
+    /// When `enable_clipping` is `true`, the polyline will only be drawn until
+    /// the point it intersects with a half space defined in the clipping
+    /// settings.
+    pub enable_clipping: bool,
 }
 
 impl Default for PolylineMaterial {
@@ -73,6 +80,7 @@ impl Default for PolylineMaterial {
             color: Color::WHITE.to_linear(),
             depth_bias: 0.0,
             perspective: false,
+            enable_clipping: false,
         }
     }
 }
@@ -110,6 +118,7 @@ pub struct PolylineMaterialUniform {
 pub struct GpuPolylineMaterial {
     pub buffer: UniformBuffer<PolylineMaterialUniform>,
     pub perspective: bool,
+    pub enable_clipping: bool,
     pub bind_group: BindGroup,
     pub alpha_mode: AlphaMode,
 }
@@ -154,6 +163,7 @@ impl RenderAsset for GpuPolylineMaterial {
         Ok(GpuPolylineMaterial {
             buffer,
             perspective: polyline_material.perspective,
+            enable_clipping: polyline_material.enable_clipping,
             alpha_mode,
             bind_group,
         })
@@ -234,6 +244,11 @@ impl SpecializedRenderPipeline for PolylineMaterialPipeline {
                 .vertex
                 .shader_defs
                 .push("POLYLINE_PERSPECTIVE".into());
+        }
+        if key.contains(PolylinePipelineKey::CLIPPING) {
+            if let Some(fragment_state) = descriptor.fragment.as_mut() {
+                fragment_state.shader_defs.push("POLYLINE_CLIPPING".into());
+            }
         }
         descriptor.layout = vec![
             self.polyline_pipeline.view_layout.clone(),
@@ -344,10 +359,10 @@ pub fn queue_material_polylines(
         let inverse_view_matrix = view.world_from_view.compute_matrix().inverse();
         let inverse_view_row_2 = inverse_view_matrix.row(2);
 
-        let mut polyline_key = PolylinePipelineKey::from_msaa_samples(msaa.samples());
-        polyline_key |= PolylinePipelineKey::from_hdr(view.hdr);
-
         for visible_entity in visible_entities.get::<WithPolyline>() {
+            let mut polyline_key = PolylinePipelineKey::from_msaa_samples(msaa.samples());
+            polyline_key |= PolylinePipelineKey::from_hdr(view.hdr);
+
             let Ok((material_handle, polyline_uniform)) = material_meshes.get(*visible_entity)
             else {
                 continue;
@@ -360,6 +375,9 @@ pub fn queue_material_polylines(
             }
             if material.perspective {
                 polyline_key |= PolylinePipelineKey::PERSPECTIVE
+            }
+            if material.enable_clipping {
+                polyline_key |= PolylinePipelineKey::CLIPPING
             }
             let pipeline_id =
                 pipelines.specialize(&pipeline_cache, &material_pipeline, polyline_key);
