@@ -1,7 +1,7 @@
 use bevy::{
     color::palettes::css::{BLUE, GREEN, RED},
     prelude::*,
-    render::primitives::HalfSpace,
+    render::{camera::ScalingMode, primitives::HalfSpace},
 };
 use bevy_polyline::{clipping::ClippingSettings, prelude::*};
 
@@ -43,11 +43,9 @@ fn setup(
             ],
         }),
         material: polyline_materials.add(PolylineMaterial {
-            width: 10.0,
             color: RED.into(),
-            perspective: false,
             enable_clipping: true,
-            depth_bias: 0.0,
+            ..default()
         }),
         ..default()
     });
@@ -76,11 +74,10 @@ fn setup(
             ],
         }),
         material: polyline_materials.add(PolylineMaterial {
-            width: 10.0,
             color: GREEN.into(),
             perspective: true,
             enable_clipping: true,
-            depth_bias: 0.0,
+            ..default()
         }),
         ..default()
     });
@@ -90,11 +87,9 @@ fn setup(
             vertices: vec![Vec3::NEG_ONE, Vec3::ONE],
         }),
         material: polyline_materials.add(PolylineMaterial {
-            width: 10.0,
             color: BLUE.into(),
-            perspective: false,
             enable_clipping: false,
-            depth_bias: 0.0,
+            ..default()
         }),
         ..default()
     });
