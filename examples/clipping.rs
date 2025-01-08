@@ -1,7 +1,7 @@
 use bevy::{
     color::palettes::css::{BLUE, GREEN, RED},
     prelude::*,
-    render::{camera::ScalingMode, primitives::HalfSpace},
+    render::primitives::HalfSpace,
 };
 use bevy_polyline::{clipping::ClippingSettings, prelude::*};
 
