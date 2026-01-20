@@ -101,14 +101,14 @@ fn vertex(vertex: Vertex) -> VertexOutput {
     }
 
     return VertexOutput(
-        vec4(clip.w * ((2.0 * pt) / resolution - 1.0), depth, clip.w), 
-        color, 
+        vec4(clip.w * ((2.0 * pt) / resolution - 1.0), depth, clip.w),
+        color,
         polyline.model * vec4(mix(vertex.point_a, vertex.point_b, position.z), 1.0),
     );
 }
 
 fn clip_near_plane(a: vec4<f32>, b: vec4<f32>) -> vec4<f32> {
-    // Move a if a is behind the near plane and b is in front. 
+    // Move a if a is behind the near plane and b is in front.
     if a.z > a.w && b.z <= b.w {
         // Interpolate a towards b until it's at the near plane.
         let distance_a = a.z - a.w;

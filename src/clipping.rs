@@ -1,12 +1,12 @@
 use bevy_app::{App, Plugin};
+use bevy_camera::primitives::HalfSpace;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 use bevy_render::{
     extract_resource::{ExtractResource, ExtractResourcePlugin},
-    primitives::HalfSpace,
     render_resource::{BindGroup, BindGroupEntries, Buffer, BufferInitDescriptor, BufferUsages},
     renderer::RenderDevice,
-    Render, RenderApp, RenderSet,
+    Render, RenderApp, RenderSystems,
 };
 use bytemuck::{Pod, Zeroable};
 
@@ -28,7 +28,7 @@ impl Plugin for PolylineClippingPlugin {
             render_app.add_systems(
                 Render,
                 prepare_half_spaces
-                    .in_set(RenderSet::PrepareBindGroups)
+                    .in_set(RenderSystems::PrepareBindGroups)
                     .run_if(|res: Res<ClippingSettings>| res.is_changed()),
             );
         }

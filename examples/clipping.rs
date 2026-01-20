@@ -1,9 +1,10 @@
 use bevy::{
+    camera::primitives::HalfSpace,
     color::palettes::css::{BLUE, GREEN, RED},
     prelude::*,
-    render::primitives::HalfSpace,
 };
 use bevy_polyline::{clipping::ClippingSettings, prelude::*};
+use bevy_render::view::Hdr;
 
 fn main() {
     App::new()
@@ -98,10 +99,8 @@ fn setup(
     commands.spawn((
         Camera3d::default(),
         Transform::from_xyz(2.5, 2.5, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
-        Camera {
-            hdr: true,
-            ..default()
-        },
+        Camera::default(),
+        Hdr,
     ));
 }
 
