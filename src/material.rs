@@ -5,15 +5,20 @@ use crate::{
         PolylineViewBindGroup, SetPolylineBindGroup,
     },
 };
-use bevy_app::prelude::*;
-use bevy_asset::prelude::*;
-use bevy_color::prelude::*;
-use bevy_core_pipeline::{
-    core_3d::{AlphaMask3d, Opaque3d, Opaque3dBatchSetKey, Opaque3dBinKey, Transparent3d},
-    prepass::{OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey},
-};
-use bevy_ecs::{
-    component::Tick,
+
+use bevy::{
+    core_pipeline::{
+        core_3d::{AlphaMask3d, Opaque3d, Opaque3dBatchSetKey, Opaque3dBinKey, Transparent3d},
+        prepass::{OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey},
+    },
+    ecs::{
+        change_detection::Tick,
+        query::ROQueryItem,
+        system::{
+            lifetimeless::{Read, SRes},
+            SystemParamItem,
+        },
+    },
     prelude::*,
     query::ROQueryItem,
     system::{
@@ -90,8 +95,8 @@ impl Default for PolylineMaterial {
 }
 
 impl PolylineMaterial {
-    pub fn bind_group_layout(render_device: &RenderDevice) -> BindGroupLayout {
-        render_device.create_bind_group_layout(
+    pub fn bind_group_layout_descriptor() -> BindGroupLayoutDescriptor {
+        BindGroupLayoutDescriptor::new(
             "polyline_material_layout",
             &BindGroupLayoutEntries::single(
                 ShaderStages::VERTEX,
@@ -131,6 +136,7 @@ impl RenderAsset for GpuPolylineMaterial {
     type SourceAsset = PolylineMaterial;
     type Param = (
         SRes<RenderDevice>,
+        SRes<PipelineCache>,
         SRes<RenderQueue>,
         SRes<PolylineMaterialPipeline>,
     );
@@ -138,7 +144,9 @@ impl RenderAsset for GpuPolylineMaterial {
     fn prepare_asset(
         polyline_material: Self::SourceAsset,
         _: AssetId<Self::SourceAsset>,
-        (device, queue, polyline_pipeline): &mut bevy_ecs::system::SystemParamItem<Self::Param>,
+        (device, cache, queue, polyline_pipeline): &mut bevy::ecs::system::SystemParamItem<
+            Self::Param,
+        >,
         _: Option<&Self>,
     ) -> Result<Self, PrepareAssetError<Self::SourceAsset>> {
         let value = PolylineMaterialUniform {
@@ -156,7 +164,7 @@ impl RenderAsset for GpuPolylineMaterial {
 
         let bind_group = device.create_bind_group(
             Some("polyline_material_bind_group"),
-            &polyline_pipeline.material_layout,
+            &cache.get_bind_group_layout(&polyline_pipeline.material_layout),
             &BindGroupEntries::single(buffer_binding),
         );
 
@@ -206,29 +214,12 @@ impl Plugin for PolylineMaterialPlugin {
 #[derive(Resource)]
 pub struct PolylineMaterialPipeline {
     pub polyline_pipeline: PolylinePipeline,
-    pub material_layout: BindGroupLayout,
-    pub half_spaces_layout: BindGroupLayout,
+    pub material_layout: BindGroupLayoutDescriptor,
 }
 
 impl FromWorld for PolylineMaterialPipeline {
     fn from_world(world: &mut World) -> Self {
-        let render_device = world.get_resource::<RenderDevice>().unwrap();
-        let material_layout = PolylineMaterial::bind_group_layout(render_device);
-
-        let half_spaces_layout = render_device.create_bind_group_layout(
-            "half_spaces_layout",
-            &[BindGroupLayoutEntry {
-                binding: 0,
-                visibility: ShaderStages::FRAGMENT,
-                ty: BindingType::Buffer {
-                    ty: BufferBindingType::Uniform,
-                    has_dynamic_offset: false,
-                    min_binding_size: None,
-                },
-                count: None,
-            }],
-        );
-
+        let material_layout = PolylineMaterial::bind_group_layout_descriptor();
         let pipeline = world.get_resource::<PolylinePipeline>().unwrap();
         PolylineMaterialPipeline {
             polyline_pipeline: pipeline.to_owned(),
