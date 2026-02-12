@@ -1,5 +1,5 @@
 use crate::{
-    clipping::HalfSpacesUniform,
+    clipping::{half_spaces_layout_descriptor, HalfSpacesUniform},
     polyline::{
         DrawPolyline, PolylineHandle, PolylinePipeline, PolylinePipelineKey, PolylineUniform,
         PolylineViewBindGroup, SetPolylineBindGroup,
@@ -11,15 +11,10 @@ use bevy::{
         core_3d::{AlphaMask3d, Opaque3d, Opaque3dBatchSetKey, Opaque3dBinKey, Transparent3d},
         prepass::{OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey},
     },
-    ecs::{
-        change_detection::Tick,
-        query::ROQueryItem,
-        system::{
-            lifetimeless::{Read, SRes},
-            SystemParamItem,
-        },
-    },
     prelude::*,
+};
+use bevy_ecs::{
+    change_detection::Tick,
     query::ROQueryItem,
     system::{
         lifetimeless::{Read, SRes},
@@ -28,7 +23,6 @@ use bevy::{
 };
 use bevy_math::Vec4;
 use bevy_mesh::Mesh;
-use bevy_reflect::prelude::*;
 use bevy_render::{
     extract_component::{ExtractComponent, ExtractComponentPlugin},
     render_asset::{PrepareAssetError, RenderAsset, RenderAssetPlugin, RenderAssets},
@@ -144,9 +138,7 @@ impl RenderAsset for GpuPolylineMaterial {
     fn prepare_asset(
         polyline_material: Self::SourceAsset,
         _: AssetId<Self::SourceAsset>,
-        (device, cache, queue, polyline_pipeline): &mut bevy::ecs::system::SystemParamItem<
-            Self::Param,
-        >,
+        (device, cache, queue, polyline_pipeline): &mut SystemParamItem<Self::Param>,
         _: Option<&Self>,
     ) -> Result<Self, PrepareAssetError<Self::SourceAsset>> {
         let value = PolylineMaterialUniform {
@@ -215,11 +207,13 @@ impl Plugin for PolylineMaterialPlugin {
 pub struct PolylineMaterialPipeline {
     pub polyline_pipeline: PolylinePipeline,
     pub material_layout: BindGroupLayoutDescriptor,
+    pub half_spaces_layout: BindGroupLayoutDescriptor,
 }
 
 impl FromWorld for PolylineMaterialPipeline {
     fn from_world(world: &mut World) -> Self {
         let material_layout = PolylineMaterial::bind_group_layout_descriptor();
+        let half_spaces_layout = half_spaces_layout_descriptor();
         let pipeline = world.get_resource::<PolylinePipeline>().unwrap();
         PolylineMaterialPipeline {
             polyline_pipeline: pipeline.to_owned(),

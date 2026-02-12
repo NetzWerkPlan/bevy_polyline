@@ -4,7 +4,11 @@ use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
 use bevy_render::{
     extract_resource::{ExtractResource, ExtractResourcePlugin},
-    render_resource::{BindGroup, BindGroupEntries, Buffer, BufferInitDescriptor, BufferUsages},
+    render_resource::{
+        binding_types::uniform_buffer, BindGroup, BindGroupEntries, BindGroupLayoutDescriptor,
+        BindGroupLayoutEntries, Buffer, BufferInitDescriptor, BufferUsages, PipelineCache,
+        ShaderStages, ShaderType,
+    },
     renderer::RenderDevice,
     Render, RenderApp, RenderSystems,
 };
@@ -45,7 +49,7 @@ impl ExtractResource for ClippingSettings {
     }
 }
 
-#[derive(Clone, Copy, Pod, Zeroable)]
+#[derive(Clone, Copy, Pod, Zeroable, ShaderType)]
 #[repr(C)]
 struct HalfSpaceData {
     // Make the count a vec4 to make alignment easier
@@ -75,9 +79,20 @@ pub struct HalfSpacesUniform {
     pub bind_group: BindGroup,
 }
 
+pub fn half_spaces_layout_descriptor() -> BindGroupLayoutDescriptor {
+    BindGroupLayoutDescriptor::new(
+        "polyline_half_spaces_layout",
+        &BindGroupLayoutEntries::single(
+            ShaderStages::FRAGMENT,
+            uniform_buffer::<HalfSpaceData>(false),
+        ),
+    )
+}
+
 pub fn prepare_half_spaces(
     mut commands: Commands,
     render_device: Res<RenderDevice>,
+    pipeline_cache: Res<PipelineCache>,
     pipeline: Res<PolylineMaterialPipeline>,
     clipping_settings: Res<ClippingSettings>,
 ) {
@@ -91,7 +106,7 @@ pub fn prepare_half_spaces(
 
     let bind_group = render_device.create_bind_group(
         Some("half_spaces_bind_group"),
-        &pipeline.half_spaces_layout,
+        &pipeline_cache.get_bind_group_layout(&pipeline.half_spaces_layout),
         &BindGroupEntries::single(half_spaces_buffer.as_entire_binding()),
     );
 
