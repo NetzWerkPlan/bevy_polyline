@@ -6,23 +6,28 @@ use crate::{
     },
 };
 
-use bevy::{
-    core_pipeline::{
-        core_3d::{AlphaMask3d, Opaque3d, Opaque3dBatchSetKey, Opaque3dBinKey, Transparent3d},
-        prepass::{OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey},
-    },
-    prelude::*,
+use bevy_app::{App, Plugin};
+use bevy_asset::{Asset, AssetApp, AssetId, Handle};
+use bevy_color::{Alpha, Color, ColorToComponents, LinearRgba};
+use bevy_core_pipeline::{
+    core_3d::{AlphaMask3d, Opaque3d, Opaque3dBatchSetKey, Opaque3dBinKey, Transparent3d},
+    prepass::{OpaqueNoLightmap3dBatchSetKey, OpaqueNoLightmap3dBinKey},
 };
 use bevy_ecs::{
     change_detection::Tick,
+    component::Component,
     query::ROQueryItem,
+    resource::Resource,
+    schedule::IntoScheduleConfigs,
     system::{
         lifetimeless::{Read, SRes},
-        SystemParamItem,
+        Local, Query, Res, ResMut, SystemParamItem,
     },
+    world::{FromWorld, World},
 };
 use bevy_math::Vec4;
 use bevy_mesh::Mesh;
+use bevy_reflect::{std_traits::ReflectDefault, Reflect, TypePath};
 use bevy_render::{
     extract_component::{ExtractComponent, ExtractComponentPlugin},
     render_asset::{PrepareAssetError, RenderAsset, RenderAssetPlugin, RenderAssets},

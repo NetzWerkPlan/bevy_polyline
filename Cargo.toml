@@ -8,49 +8,46 @@ repository = "https://github.com/ForesightMiningSoftwareCorporation/bevy_polylin
 homepage = "https://github.com/ForesightMiningSoftwareCorporation/bevy_polyline"
 documentation = "https://docs.rs/bevy_polyline"
 readme = "README.md"
-keywords = ["bevy", "gamedev", "polyline", "graphics"]
-categories = ["rendering", "game-development"]
+keywords = ["bevy", "gamedev", "graphics", "polyline"]
+categories = ["game-development", "rendering"]
 authors = [
-	"Foresight Mining Software Corporation",
-	"Jonas Matser",
-	"Aevyrie Roessler",
+  "Foresight Mining Software Corporation",
+  "Jonas Matser",
+  "Aevyrie Roessler",
 ]
 
 [dependencies]
-bitflags = "2.3"
-bevy = { version = "0.18", default-features = false, features = [
-	"bevy_core_pipeline",
-	"bevy_render",
-	"bevy_asset",
-] }
 bevy_app = "0.18"
 bevy_asset = "0.18"
 bevy_camera = "0.18"
+bevy_color = "0.18"
+bevy_core_pipeline = "0.18"
 bevy_derive = "0.18"
 bevy_ecs = "0.18"
 bevy_image = "0.18"
 bevy_math = "0.18"
 bevy_mesh = "0.18"
+bevy_post_process = "0.18"
 bevy_reflect = "0.18"
 bevy_render = "0.18"
 bevy_shader = "0.18"
 bevy_transform = "0.18"
-bevy_post_process = "0.18"
+bitflags = "2.3"
 bytemuck = "1.16.1"
 
 [dev-dependencies]
+bevy = { version = "0.18", default-features = false, features = [
+  "bevy_pbr",
+  "bevy_window",
+  "bevy_winit",
+  "ktx2",
+  "tonemapping_luts",
+  "x11",
+  "zstd_rust",
+] }
 lazy_static = "1.4.0"
 rand = "0.8.4"
 ringbuffer = "0.15"
-bevy = { version = "0.18", default-features = false, features = [
-	"bevy_window",
-	"bevy_winit",
-	"bevy_pbr",
-	"x11",
-	"tonemapping_luts",
-	"ktx2",
-	"zstd_rust",
-] }
 
 [patch.crates-io]
 # Unify the windows crate version to avoid DX12 type mismatches in wgpu-hal.
