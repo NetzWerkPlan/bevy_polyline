@@ -1,7 +1,7 @@
 use bevy_app::{App, Plugin};
-use bevy_camera::primitives::HalfSpace;
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::prelude::*;
+use bevy_math::primitives::HalfSpace;
 use bevy_render::{
     extract_resource::{ExtractResource, ExtractResourcePlugin},
     render_resource::{

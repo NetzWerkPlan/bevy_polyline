@@ -10,7 +10,6 @@ use bevy_ecs::{
         SystemParamItem,
     },
 };
-use bevy_image::BevyDefault;
 use bevy_math::{Mat4, Vec3};
 use bevy_mesh::VertexBufferLayout;
 use bevy_reflect::TypePath;
@@ -210,10 +209,7 @@ impl SpecializedRenderPipeline for PolylinePipeline {
             depth_write_enabled = true;
         }
 
-        let format = match key.contains(PolylinePipelineKey::HDR) {
-            true => bevy_render::view::ViewTarget::TEXTURE_FORMAT_HDR,
-            false => TextureFormat::bevy_default(),
-        };
+        let format = key.target_format();
 
         let mut vertex_layout = VertexBufferLayout {
             step_mode: VertexStepMode::Instance,
@@ -257,8 +253,8 @@ impl SpecializedRenderPipeline for PolylinePipeline {
             },
             depth_stencil: Some(DepthStencilState {
                 format: TextureFormat::Depth32Float,
-                depth_write_enabled,
-                depth_compare: CompareFunction::Greater,
+                depth_write_enabled: Some(depth_write_enabled),
+                depth_compare: Some(CompareFunction::Greater),
                 stencil: StencilState {
                     front: StencilFaceState::IGNORE,
                     back: StencilFaceState::IGNORE,
@@ -277,7 +273,7 @@ impl SpecializedRenderPipeline for PolylinePipeline {
                 alpha_to_coverage_enabled: false,
             },
             label: Some(label),
-            push_constant_ranges: vec![],
+            immediate_size: 0,
             zero_initialize_workgroup_memory: true,
         }
     }
@@ -292,8 +288,10 @@ bitflags::bitflags! {
         const NONE = 0;
         const PERSPECTIVE = (1 << 0);
         const TRANSPARENT_MAIN_PASS = (1 << 1);
-        const HDR = (1 << 2);
         const CLIPPING = (1 << 3);
+        // Color target format: 5 bits, clear of the flag bits (0, 1, 3) and the MSAA bits (top 3).
+        const COLOR_TARGET_FORMAT_RESERVED_BITS =
+            Self::COLOR_TARGET_FORMAT_MASK_BITS << Self::COLOR_TARGET_FORMAT_SHIFT_BITS;
         const MSAA_RESERVED_BITS = Self::MSAA_MASK_BITS << Self::MSAA_SHIFT_BITS;
     }
 }
@@ -301,6 +299,9 @@ bitflags::bitflags! {
 impl PolylinePipelineKey {
     const MSAA_MASK_BITS: u32 = 0b111;
     const MSAA_SHIFT_BITS: u32 = 32 - Self::MSAA_MASK_BITS.count_ones();
+
+    const COLOR_TARGET_FORMAT_MASK_BITS: u32 = bevy_render::view::COLOR_TARGET_FORMAT_MASK_BITS;
+    const COLOR_TARGET_FORMAT_SHIFT_BITS: u32 = 4;
 
     pub fn from_msaa_samples(msaa_samples: u32) -> Self {
         let msaa_bits =
@@ -312,12 +313,23 @@ impl PolylinePipelineKey {
         1 << ((self.bits() >> Self::MSAA_SHIFT_BITS) & Self::MSAA_MASK_BITS)
     }
 
-    pub fn from_hdr(hdr: bool) -> Self {
-        if hdr {
-            PolylinePipelineKey::HDR
-        } else {
-            PolylinePipelineKey::NONE
-        }
+    /// Encode the view's color target [`TextureFormat`] into the key.
+    pub fn from_target_format(format: TextureFormat) -> Self {
+        let code = bevy_render::view::texture_format_to_code(format)
+            .expect("texture format is not supported by the polyline pipeline")
+            as u32;
+        Self::from_bits_retain(
+            (code & Self::COLOR_TARGET_FORMAT_MASK_BITS) << Self::COLOR_TARGET_FORMAT_SHIFT_BITS,
+        )
+    }
+
+    /// Decode the color target [`TextureFormat`] previously encoded with
+    /// [`Self::from_target_format`].
+    pub fn target_format(&self) -> TextureFormat {
+        let code = ((self.bits() >> Self::COLOR_TARGET_FORMAT_SHIFT_BITS)
+            & Self::COLOR_TARGET_FORMAT_MASK_BITS) as u8;
+        bevy_render::view::texture_format_from_code(code)
+            .expect("unknown color target format bits in polyline pipeline key")
     }
 }
 
