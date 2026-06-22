@@ -1,10 +1,9 @@
 use bevy::{
-    camera::primitives::HalfSpace,
     color::palettes::css::{BLUE, GREEN, RED},
     prelude::*,
 };
+use bevy_camera::Hdr;
 use bevy_polyline::{clipping::ClippingSettings, prelude::*};
-use bevy_render::view::Hdr;
 
 fn main() {
     App::new()

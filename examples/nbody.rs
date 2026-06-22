@@ -5,8 +5,8 @@ use bevy::{
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
     math::Vec3A,
     prelude::*,
-    render::view::Hdr,
 };
+use bevy_camera::Hdr;
 use bevy_polyline::prelude::*;
 use bevy_post_process::bloom::Bloom;
 
